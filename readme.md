@@ -122,4 +122,4 @@ Elias Tafadzwa Mudzudzu, Computer Science Engineering student at Kalinga Univers
 
 ## Licence
 
-No licence has been chosen yet. Add one (for example MIT) before others reuse the code.
+This project is released under the [MIT Licence](LICENSE).

@@ -11,6 +11,7 @@ Author  : Elias Tafadzwa Mudzudzu
 # Imports
 # ==========================
 
+import sys
 from pathlib import Path
 import pandas as pd
 
@@ -21,7 +22,9 @@ from database.connection import get_connection
 # Paths
 # ==========================
 
-INPUT_FILE = Path("data/processed/cleaned_agents.xlsx")
+# Default input is the output of the cleaning step. Pass another file to load it
+# instead, e.g.:  python -m database.load_data data/sample/sample_agents.xlsx
+INPUT_FILE = Path(sys.argv[1] if len(sys.argv) > 1 else "data/processed/cleaned_agents.xlsx")
 
 
 # ==========================

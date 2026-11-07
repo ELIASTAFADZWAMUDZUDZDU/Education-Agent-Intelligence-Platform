@@ -1,6 +1,6 @@
-pandas
-openpyxl
-psycopg2-binary
-python-dotenv
-streamlit
-plotly
+pandas>=2.0
+openpyxl>=3.1
+psycopg2-binary>=2.9
+python-dotenv>=1.0
+streamlit>=1.30
+plotly>=5.18

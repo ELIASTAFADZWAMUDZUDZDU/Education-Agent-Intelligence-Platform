@@ -11,22 +11,36 @@ Author  : Elias Tafadzwa Mudzudzu
 # Imports
 # ==========================
 
-import pandas as pd
+import re
 
-from dashboard.db_queries import get_all_agents
+import pandas as pd
 
 
 # ==========================
 # AI Engine
 # ==========================
 
-def ask_ai(question):
+def _has(question, term):
+    """True if `term` appears in `question` as a whole word or phrase.
+
+    Whole-word matching avoids false hits such as "all" inside "call" or
+    "uk" inside "ukraine".
+    """
+    return re.search(rf"\b{re.escape(term)}\b", question) is not None
+
+
+def ask_ai(question, df=None):
     """
     Processes natural language questions and
     returns matching education consultants.
+
+    `df` is the consultants table. If omitted it is loaded from PostgreSQL;
+    passing a DataFrame lets the engine be used and tested without a database.
     """
 
-    df = get_all_agents()
+    if df is None:
+        from dashboard.db_queries import get_all_agents
+        df = get_all_agents()
 
     question = question.lower().strip()
 
@@ -35,7 +49,7 @@ def ask_ai(question):
     # Show All Consultants
     # ==========================================
 
-    if "all" in question:
+    if _has(question, "all") or _has(question, "everyone"):
 
         return {
             "message": f"{len(df)} consultants found.",
@@ -44,7 +58,7 @@ def ask_ai(question):
 
 
     # ==========================================
-    # Search By Country
+    # Count Questions ("how many consultants in Kenya?")
     # ==========================================
 
     countries = (
@@ -53,9 +67,29 @@ def ask_ai(question):
         .unique()
     )
 
+    if _has(question, "how many"):
+
+        for country in countries:
+
+            if _has(question, country.lower()):
+
+                total = int(
+                    (df["country"].str.lower() == country.lower()).sum()
+                )
+
+                return {
+                    "message": f"There are {total} consultant(s) in {country}.",
+                    "data": pd.DataFrame()
+                }
+
+
+    # ==========================================
+    # Search By Country
+    # ==========================================
+
     for country in countries:
 
-        if country.lower() in question:
+        if _has(question, country.lower()):
 
             result = df[
                 df["country"]
@@ -73,7 +107,7 @@ def ask_ai(question):
     # Website Availability
     # ==========================================
 
-    if "without website" in question:
+    if _has(question, "without website") or _has(question, "without websites"):
 
         result = df[
             df["website_url"]
@@ -88,7 +122,7 @@ def ask_ai(question):
         }
 
 
-    if "with website" in question:
+    if _has(question, "with website") or _has(question, "with websites"):
 
         result = df[
             df["website_url"]
@@ -107,7 +141,7 @@ def ask_ai(question):
     # WhatsApp Availability
     # ==========================================
 
-    if "without whatsapp" in question:
+    if _has(question, "without whatsapp"):
 
         result = df[
             df["whatsapp_number"]
@@ -122,7 +156,7 @@ def ask_ai(question):
         }
 
 
-    if "with whatsapp" in question:
+    if _has(question, "with whatsapp"):
 
         result = df[
             df["whatsapp_number"]
@@ -156,7 +190,7 @@ def ask_ai(question):
 
     for destination in destinations:
 
-        if destination in question:
+        if _has(question, destination):
 
             result = df[
                 df["specialized_countries"]
@@ -189,7 +223,7 @@ def ask_ai(question):
 
     for service in services:
 
-        if service in question:
+        if _has(question, service):
 
             result = df[
                 df["services_offered"]
@@ -207,30 +241,6 @@ def ask_ai(question):
 
 
     # ==========================================
-    # Count Questions
-    # ==========================================
-
-    if "how many" in question:
-
-        for country in countries:
-
-            if country.lower() in question:
-
-                total = len(
-                    df[
-                        df["country"]
-                        .str.lower()
-                        == country.lower()
-                    ]
-                )
-
-                return {
-                    "message": f"There are {total} consultant(s) in {country}.",
-                    "data": pd.DataFrame()
-                }
-
-
-    # ==========================================
     # Fallback Search
     # ==========================================
 
@@ -241,7 +251,8 @@ def ask_ai(question):
               row.str.contains(
                   question,
                   case=False,
-                  na=False
+                  na=False,
+                  regex=False
               ).any(),
               axis=1
           )

@@ -378,7 +378,7 @@ streamlit run dashboard/app.py
 
 **Elias Tafadzwa Mudzudzu**
 
-Computer Engineering Student
+Computer Science Engineering Student
 
 Aspiring AI & Data Engineer
 
